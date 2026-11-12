@@ -1,3 +1,26 @@
- venv/
-   __pycache__/
-   .env
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets
+.env
+
+# Personal financial data (never commit real records)
+data/transactions.json
+data/*.tmp
+data/*.csv
+
+# Editors and OS (keep the shared extension recommendations)
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
