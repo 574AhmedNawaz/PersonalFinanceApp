@@ -66,3 +66,32 @@ class ValidateDateTests(unittest.TestCase):
 class ValidateOtherFieldsTests(unittest.TestCase):
     def test_transaction_type_is_case_insensitive(self):
         self.assertEqual(validate_transaction_type(" Income "), "income")
+        self.assertEqual(validate_transaction_type("EXPENSE"), "expense")
+
+    def test_transaction_type_rejects_unknown(self):
+        for value in ["", "transfer", "in"]:
+            with self.subTest(value=value):
+                with self.assertRaises(ValidationError):
+                    validate_transaction_type(value)
+
+    def test_text_is_stripped(self):
+        self.assertEqual(validate_text("  lunch  ", "Description"), "lunch")
+
+    def test_text_rejects_empty_and_too_long(self):
+        with self.assertRaises(ValidationError):
+            validate_text("   ", "Description")
+        with self.assertRaises(ValidationError):
+            validate_text("x" * 101, "Description")
+        self.assertEqual(len(validate_text("x" * 100, "Description")), 100)
+
+    def test_category_is_normalised(self):
+        self.assertEqual(validate_category("food"), "Food")
+        self.assertEqual(validate_category("  EATING out "), "Eating Out")
+
+    def test_category_rejects_empty(self):
+        with self.assertRaises(ValidationError):
+            validate_category("")
+
+
+if __name__ == "__main__":
+    unittest.main()
