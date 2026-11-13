@@ -21,3 +21,6 @@ class TransactionNotFoundError(FinanceError):
 
 class StorageError(FinanceError):
     """A data file could not be read or written safely."""
+
+class BudgetNotFoundError(FinanceError):
+    """No budget exists for the requested category and month."""
