@@ -8,7 +8,7 @@ search, then sort the results, then display them.
 from __future__ import annotations
 
 from datetime import date
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 from finance_core.errors import ValidationError
 from finance_core.models import Transaction
@@ -93,3 +93,30 @@ def _matches(
     if end is not None and transaction.transaction_date > end:
         return False
     return True
+
+# Each sort option maps to a key function. The transaction ID is added as
+# a final tie-breaker so equal values always come out in the same order.
+SORT_KEYS: dict[str, Callable[[Transaction], tuple]] = {
+    "date": lambda t: (t.transaction_date, t.transaction_id),
+    "amount": lambda t: (t.amount, t.transaction_id),
+    "category": lambda t: (t.category.lower(), t.transaction_id),
+    "type": lambda t: (t.transaction_type, t.transaction_id),
+}
+
+
+def sort_transactions(
+    transactions: Iterable[Transaction],
+    sort_by: str = "date",
+    descending: bool = False,
+) -> list[Transaction]:
+    """Return a new sorted list.
+
+    sort_by is one of 'date', 'amount', 'category' or 'type'.
+    Uses Python's built-in sorted() (Timsort): O(n log n) in the worst
+    case and stable, so it is fast and predictable for this data size.
+    """
+    key = SORT_KEYS.get(str(sort_by).strip().lower())
+    if key is None:
+        options = ", ".join(SORT_KEYS)
+        raise ValidationError(f"Cannot sort by '{sort_by}'. Choose one of: {options}.")
+    return sorted(transactions, key=key, reverse=descending)
