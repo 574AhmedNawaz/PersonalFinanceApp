@@ -14,6 +14,7 @@ from finance_core.errors import ValidationError
 from finance_core.models import TRANSACTION_TYPES
 
 DATE_FORMAT = "%Y-%m-%d"
+MONTH_FORMAT = "%Y-%m"
 MAX_AMOUNT = Decimal("1000000000")  # one billion: catches typing mistakes
 MAX_TEXT_LENGTH = 100
 TWO_PLACES = Decimal("0.01")
@@ -61,7 +62,16 @@ def validate_transaction_type(value: object) -> str:
         raise ValidationError("Transaction type must be 'income' or 'expense'.")
     return text
 
-
+def validate_month(value: object) -> str:
+    """Return a month in 'YYYY-MM' form, e.g. '2026-11'."""
+    text = str(value).strip()
+    try:
+        return datetime.strptime(text, MONTH_FORMAT).strftime(MONTH_FORMAT)
+    except ValueError:
+        raise ValidationError(
+            f"'{text}' is not a valid month. Use YYYY-MM, e.g. 2026-11."
+        ) from None
+    
 def validate_text(value: object, field_name: str) -> str:
     """Return stripped, non-empty text no longer than MAX_TEXT_LENGTH."""
     text = str(value).strip()

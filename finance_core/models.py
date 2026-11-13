@@ -42,3 +42,22 @@ class Transaction:
             "description": self.description,
             "date": self.transaction_date.isoformat(),
         }
+
+@dataclass(frozen=True)
+class Budget:
+    """A spending limit for one expense category in one month.
+
+    The month is stored as text in 'YYYY-MM' form, e.g. '2026-11'.
+    """
+
+    category: str
+    month: str
+    limit: Decimal
+
+    def to_dict(self) -> dict[str, str]:
+        """Convert to a JSON-friendly dictionary (limit stored as text)."""
+        return {
+            "category": self.category,
+            "month": self.month,
+            "limit": str(self.limit),
+        }

@@ -15,6 +15,7 @@ env/
 
 # Personal financial data (never commit real records)
 data/transactions.json
+data/budgets.json
 data/*.tmp
 data/*.csv
 
