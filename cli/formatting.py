@@ -7,26 +7,18 @@ happen here; those all live in finance_core.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Sequence
 
 from finance_core.analytics_service import MonthlySummary
 from finance_core.budget_service import BudgetStatus
+from finance_core.display import format_money, format_percent
 from finance_core.models import Transaction
 
 DESCRIPTION_WIDTH = 30
 CATEGORY_WIDTH = 20
 
 
-def format_money(amount: Decimal) -> str:
-    """1234.5 -> '1,234.50'."""
-    return f"{amount:,.2f}"
 
-
-def format_percent(value: Optional[Decimal], missing: str = "N/A") -> str:
-    """Decimal('80') -> '80.00%'; None -> the `missing` text."""
-    if value is None:
-        return missing
-    return f"{value:,.2f}%"
 
 
 def _shorten(text: str, width: int) -> str:
