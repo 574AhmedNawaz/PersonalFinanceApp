@@ -12,11 +12,12 @@ reading and writing helpers, so the safety rules are identical.
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable, TextIO
 
 from finance_core.errors import FinanceError, StorageError
 from finance_core.models import Budget, Transaction
@@ -33,33 +34,55 @@ DATA_VERSION = 1
 DATA_FOLDER = Path(__file__).resolve().parent.parent / "data"
 DEFAULT_DATA_FILE = DATA_FOLDER / "transactions.json"
 DEFAULT_BUDGET_FILE = DATA_FOLDER / "budgets.json"
+DEFAULT_EXPORT_FILE = DATA_FOLDER / "transactions_export.csv"
+
+CSV_COLUMNS = ("Transaction ID", "Type", "Amount", "Category", "Description", "Date")
 
 
 # ----- shared helpers -----
 
-def _save_records(file_path: Path, key: str, records: list[dict]) -> None:
-    """Write {"version": ..., key: records} to file_path, safely."""
+def _write_atomically(
+    file_path: Path,
+    write_content: Callable[[TextIO], None],
+    *,
+    encoding: str = "utf-8",
+    newline: str | None = None,
+) -> None:
+    """Write a file via a temporary file so a crash cannot leave half a file.
+
+    write_content receives the open temporary file. Only when it has
+    finished is the temporary file swapped in place of the real one.
+    """
     file_path = Path(file_path)
-    payload = {"version": DATA_VERSION, key: records}
     temp_name = None
     try:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
             "w",
-            encoding="utf-8",
+            encoding=encoding,
+            newline=newline,
             dir=file_path.parent,
             suffix=".tmp",
             delete=False,
         ) as temp_file:
             temp_name = temp_file.name
-            json.dump(payload, temp_file, indent=2)
+            write_content(temp_file)
             temp_file.flush()
             os.fsync(temp_file.fileno())
         os.replace(temp_name, file_path)  # atomic swap on Windows and Linux
     except OSError as error:
         if temp_name and os.path.exists(temp_name):
             os.remove(temp_name)
-        raise StorageError(f"Could not save data to {file_path}: {error}") from error
+        raise StorageError(
+            f"Could not save data to {file_path}: {error}. "
+            "Make sure the file is not open in another program."
+        ) from error
+
+
+def _save_records(file_path: Path, key: str, records: list[dict]) -> None:
+    """Write {"version": ..., key: records} to file_path, safely."""
+    payload = {"version": DATA_VERSION, key: records}
+    _write_atomically(file_path, lambda file: json.dump(payload, file, indent=2))
 
 
 def _load_records(file_path: Path, key: str) -> list:
@@ -179,3 +202,38 @@ def _record_to_budget(record: object, position: int) -> Budget:
         ) from None
     except FinanceError as error:
         raise StorageError(f"Record {position} is invalid: {error}") from error
+
+
+# ----- CSV export -----
+
+def export_transactions_csv(file_path: Path, transactions: Iterable[Transaction]) -> None:
+    """Write transactions to a CSV file that opens correctly in Excel.
+
+    The file starts with a header row. It is saved with a UTF-8 byte order
+    mark so Excel shows accented characters correctly.
+    """
+    def write_rows(file: TextIO) -> None:
+        writer = csv.writer(file)
+        writer.writerow(CSV_COLUMNS)
+        for t in transactions:
+            writer.writerow([
+                t.transaction_id,
+                t.transaction_type,
+                t.amount,
+                _spreadsheet_safe(t.category),
+                _spreadsheet_safe(t.description),
+                t.transaction_date.isoformat(),
+            ])
+
+    _write_atomically(file_path, write_rows, encoding="utf-8-sig", newline="")
+
+
+def _spreadsheet_safe(text: str) -> str:
+    """Stop spreadsheet programs treating text as a formula.
+
+    A cell starting with = + - or @ can be run as a formula when the CSV
+    is opened in Excel, so a leading apostrophe makes it plain text.
+    """
+    if text and text[0] in "=+-@\t\r":
+        return "'" + text
+    return text

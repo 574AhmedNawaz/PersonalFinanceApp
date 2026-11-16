@@ -23,6 +23,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Iterable, Optional
 
 from finance_core.models import EXPENSE, INCOME, Transaction
+from finance_core.validation import validate_month
 
 ZERO = Decimal("0.00")
 TWO_PLACES = Decimal("0.01")
@@ -56,6 +57,13 @@ class MonthlySummary:
 def month_key(day: date) -> str:
     """Return the month of a date as 'YYYY-MM', e.g. '2026-11'."""
     return day.strftime("%Y-%m")
+
+def transactions_in_month(
+    transactions: Iterable[Transaction], month: object
+) -> list[Transaction]:
+    """The transactions dated in one month, given as 'YYYY-MM'."""
+    wanted = validate_month(month)
+    return [t for t in transactions if month_key(t.transaction_date) == wanted]
 
 
 def _money(value: Decimal) -> Decimal:
