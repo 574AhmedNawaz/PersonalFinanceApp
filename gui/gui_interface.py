@@ -53,8 +53,8 @@ class FinanceApp:
 
         theme.apply_theme(root)
         root.title(TITLE)
-        root.geometry("1100x760")
-        root.minsize(960, 660)
+        root.geometry("1100x690")
+        root.minsize(960, 620)
 
         self._build_menu()
         self.status = ttk.Label(root, text="Your data is saved automatically after every change.",
