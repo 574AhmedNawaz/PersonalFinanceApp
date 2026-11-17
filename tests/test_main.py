@@ -51,6 +51,27 @@ class MainArgumentTests(unittest.TestCase):
                     main.main([])
         run_cli.assert_called_once_with()
 
+    def test_the_gui_flag_reports_when_the_graphical_version_is_missing(self):
+        with mock.patch.dict("sys.modules", {"gui.gui_interface": None, "gui": None}):
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                code = main.run_gui()
+        self.assertEqual(code, 1)
+        self.assertIn("has not been built yet", output.getvalue())
+
+    def test_the_gui_flag_reports_when_tkinter_is_not_installed(self):
+        error = ModuleNotFoundError("No module named 'tkinter'", name="tkinter")
+        with mock.patch("builtins.__import__", side_effect=error):
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                code = main.run_gui()
+        self.assertEqual(code, 1)
+        self.assertIn("needs Tkinter", output.getvalue())
+
+    def test_the_gui_flag_starts_the_graphical_app(self):
+        fake_module = mock.Mock(run_gui=mock.Mock(return_value=0))      # no real window is opened
+        with mock.patch.dict("sys.modules", {"gui.gui_interface": fake_module}):
+            self.assertEqual(main.main(["--gui"]), 0)
+        fake_module.run_gui.assert_called_once_with()
+
     def test_a_corrupted_data_file_gives_a_message_and_a_failure_code(self):
         error = main.StorageError("data file is damaged")
         with mock.patch.object(main, "CommandLineApp", side_effect=error):

@@ -30,8 +30,12 @@ def run_gui() -> int:
     try:
         from gui.gui_interface import run_gui as start_gui
     except ModuleNotFoundError as error:
-        if (error.name or "").split(".")[0] == "gui":
+        missing = (error.name or "").split(".")[0]
+        if missing == "gui":
             print("The graphical version has not been built yet.")
+            return 1
+        if missing in ("tkinter", "_tkinter"):
+            print("The graphical version needs Tkinter, which is not installed with this Python.")
             return 1
         raise
     return start_gui()
