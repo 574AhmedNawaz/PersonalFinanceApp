@@ -6,9 +6,10 @@ the module CSC-44102 Foundations of Programming and Software Engineering.
 It is delivered in two versions that share the same core logic: a
 command-line application (CLI) and a Tkinter graphical application (GUI).
 
-> **Status: work in progress (Day 4 of 5).** The shared core logic, the
-> command-line version and the graphical version are complete and tested.
-> Final testing, documentation and the release come next.
+> **Status: version 1.0.** The shared core logic, the command-line version and
+> the graphical version are complete and tested (374 automated tests plus a
+> recorded manual test table).
+
 ## Features
 
 - Add, view, edit and delete income and expense transactions
@@ -25,8 +26,8 @@ command-line application (CLI) and a Tkinter graphical application (GUI).
 
 ## Requirements
 
-- Python 3.9 or newer (Windows 10/11 recommended)
-- No third-party packages
+- Python 3.9 or newer (developed and tested with Python 3.14 on Windows)
+- No third-party packages; Tkinter is included with the standard Python installer
 
 ## Running the command-line version
 
@@ -68,11 +69,18 @@ records added in one version appear in the other.
 
 ## Running the tests
 
+## Testing
+
 ```
 python -m unittest
 ```
 
-Add `-v` for a line per test.
+Add `-v` for a line per test. The suite has 374 automated tests covering the
+core logic, the command-line interface and the graphical interface. The
+graphical tests are skipped automatically on a machine with no display.
+
+The manual checks I ran on the command-line and graphical versions, with their
+results, are recorded in [documentation/testing.md](documentation/testing.md).
 
 ## How data is stored
 
@@ -95,6 +103,29 @@ default file is
 before overwriting an existing file and refuses to overwrite its own data files.
 The export has one row per transaction with the columns Transaction ID, Type,
 Amount, Category, Description and Date.
+
+## Design overview
+## How it is designed
+
+The program is split into layers so that the two interfaces never repeat
+any business logic:
+
+- `finance_core` holds all the rules: validation, transactions, search and
+  sort, budgets, analytics and storage. It has no user interface code.
+- `cli` and `gui` are thin layers that ask the user for input, call
+  `finance_core`, and display the results.
+- Money is stored as `Decimal` rounded to two places, never as `float`, so
+  totals are exact.
+- Data files are written to a temporary file first and then swapped into
+  place, and a damaged file is never overwritten.
+- In the graphical version, one shared state object notifies every tab when
+  the data changes, so all screens stay in step.
+
+## Known limitations
+
+- One user and one local data file for each kind of record; no cloud sync.
+- Budgets are monthly and per category; there are no recurring transactions.
+- Amounts and dates follow the rules in `finance_core/validation.py`.
 
 ## Project structure
 
@@ -128,6 +159,10 @@ PersonalFinanceApp/
         theme.py         colours and styling
     tests/               unittest test suite
     data/                saved data (git-ignored)
-    documentation/       design notes
+    documentation/        testing record
 ```
-
+## Acknowlegment
+This project was developed for CSC-44102 using only the Python standard
+library (`tkinter`, `json`, `csv`, `decimal`, `datetime`, `unittest` and
+others). I used Claude to learn how Git and GitHub work, including branches, pull requests, releases and to explain errors. I ran all the tests and manual checks myself,
+and the results in `documentation/testing.md` are from my own runs.
