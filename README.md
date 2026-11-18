@@ -164,5 +164,4 @@ PersonalFinanceApp/
 ## Acknowlegment
 This project was developed for CSC-44102 using only the Python standard
 library (`tkinter`, `json`, `csv`, `decimal`, `datetime`, `unittest` and
-others). I used Claude to learn how Git and GitHub work, including branches, pull requests, releases and to explain errors. I ran all the tests and manual checks myself,
-and the results in `documentation/testing.md` are from my own runs.
+others). I used Claude to learn how Git and GitHub work, including branches, pull requests, releases and to explain errors. 
